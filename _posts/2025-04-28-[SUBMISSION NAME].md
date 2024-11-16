@@ -1,4 +1,34 @@
-# Viewing Images in Frequency Domain
+---
+layout: distill
+title: Analysing The Fourier Spectrum Biases of Generative Models
+description: This blog goes in depth in reviewing images in frequency domain and check whether generative models are able to properly reconstruct these images
+date: 2025-04-28
+future: true
+htmlwidgets: true
+hidden: false
+
+# anonymize when submitting 
+authors:
+  - name: Anonymous 
+
+
+bibliography: 2025-04-28-distill-example.bib  
+
+# Add a table of contents to your post.
+#   - make sure that TOC names match the actual section names
+#     for hyperlinks within the post to work correctly.
+toc:
+  - name: Viewing Images in Frequency Domain
+  - name: Analysis of Bias in GANs
+  # you can additionally add subentries like so
+    subsections:
+    - name: Setting Up the Generative CNN Structure
+    - name: ReLU as a Fixed Binary Mask
+    - name: Onto The Analysis of Filter Spectrum
+  - name: Frequency bias in Diffusion Models
+  - name: Mitigation of Frequency Bias Using Spectral Diffusion Model
+---
+## Viewing Images in Frequency Domain
 
 We are used to viewing images in the spatial domain only. But there is another way to view an image, i.e. the frequency domain. We can calculate the frequency content in an image using the 2D discrete Fourier transform. A 2D discrete fourier transform maps a grayscale image $I \in \mathbb{R}^{H \times W}$ to the frequency domain as follows :
 $$
@@ -110,8 +140,9 @@ The filters ${F}_l^{i,c}$ in each convolutional layer are now the primary tools 
 1. Binary masks (ReLU) which altihough dont create new frequencies, but distort what frequencies are passed onto next layer, and aliased by upsampling.
 2. Aliasing from Upsampling.
 
-Now, take anytwo spatial frequency components $U = \mathcal{F}_{l}^{i,c} (u_0, v_0) \quad \text{and} \quad V = \mathcal{F}_{l}^{i,c} (u_1, v_1)$ on the kernel $F_l$ of $l$'th convolution layer spatial dimension $d_l$ and filter size $k_l$, at any point during training.
-Let $G_l$ be a filter of dimension $\mathbb{R}^{d_l \times d_l}$. Because of it's dimension, it is and unrestricted filter that can hypothetically model any spectrum in the output space of the layer. Hence, we can write $F_l$ as a restriction of $G_l$ using a pulse P of area $k_l^2$ :
+Now, take anytwo spatial frequency components $U =\mathcal{F}_{l}^{i,c} (u_0, v_0)$ and $$V = \mathcal{F}_{l}^{i,c} (u_1, v_1)$$ on the kernel $F_l$ of $l$'th convolution layer spatial dimension $d_l$ and filter size $k_l$, at any point during training.
+Let $G_l$ be a filter of dimension $\mathbb{R}^{d_l \times d_l}$. Because of it's dimension, it is and unrestricted filter that can hypothetically model any spectrum in the output space of the layer. Hence, we can write $F_l$ 
+as a restriction of $G_l$ using a pulse P of area $k_l^2$ :
 $$ F_l = P.G_l \tag{1}$$
 $$ P(x,y) = P(x, y) =
 \begin{cases} \tag{2}
@@ -247,7 +278,7 @@ Moreover, while only the outer layers can produce high frequencies without alias
 
 
 
-# Frequency bias in Diffusion Models
+## Frequency bias in Diffusion Models
 
 It has been well known that like GANs, diffusion models too show frequency bias. Smaller models fail to fit the high frequency spectrum properly. In general, models have a hard time fitting the reduced spectrum graph especially where the magnitude of a particular frequency is low. Diffusion models first fit the high magnitude parts (which correspond to the low frequency region in natural images). After fitting the low frequency region , it then fits the graph in the high frequency region(or high magnitude regions). Large diffusion models have enough parameters and timesteps to fit the high frequency spectrum as well but small models struggle to do so due to lack of enough timesteps. We shall see a simplified yet elaborate version of the math proof as illustrated in Diffusion Probabilistic Model Made Slim paper. We show that by taking the assumption that the denoising network acts as a linear filter, the math works out such that the reduced spectrum is first fitted for the low frequency(or high magnitude) region in the initial timesteps and later fitted for the high frequency (or low magnitude region). Assuming the denoising network as a linear filter, we get it to work as an optimal linear filter or Weiner filter. The function of this Weiner filter is to minimize the mean squared error between the actual noise and the predicted noise by the filter.
 
@@ -258,8 +289,8 @@ $\mathbf{x}_t = \sqrt{\bar{\alpha}} \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}} \epsi
 In the denoising process , let $h_t$ be the filter that is learned . So $h_t^*$ is the optimal filter which minimizes the loss function of the diffusion model $L_t = \|\mathbf{h}_t * \mathbf{x}_t - \epsilon\|^2$
 .
 Here $*$ denotes the standard convolution operation. The optimal filter solution can be found easily in the frequency domain i.e.
-$\mathcal{H}_t^*(f) = \frac{1}{\bar{\alpha} |X_0(f)|^2 + 1 - \bar{\alpha}}$
-. Here $\mathcal{H}_t^*(f)$ represents the frequency response of the filter. Here a larger value of $\mathcal{H}_t^*(f)$ means that more of the signal at frequency f will be passed. A smaller value of $\mathcal{H}_t^*(f)$ means that the signal at frequency f will be attenuated. $|X_0(f)|^2$
+$$\mathcal{H}_t^*(f) = \frac{1}{\bar{\alpha} |X_0(f)|^2 + 1 - \bar{\alpha}}$$
+. Here $\mathcal{H}_t^*(f)$ represents the frequency response of the filter. Here a larger value of $$\mathcal{H}_t^*(f)$$ means that more of the signal at frequency f will be passed. A smaller value of $\mathcal{H}_t^*(f)$ means that the signal at frequency f will be attenuated. $|X_0(f)|^2$
 is the power spectrum of the original signal i.e. $X_0$, representing the magnitude of a particular frequency f in the spectrum
 Let's inspect the formula carefully. During the denoising phase $\bar{\alpha}$ goes from 0 to 1. 
 
@@ -309,21 +340,22 @@ Hence $G_t  = \frac{\sqrt{\overline{\alpha}}}{\overline{\alpha} + \frac{1 - \ove
 $$
 |X_t|^2 \approx  \, \overline{\alpha} |X_0|^2 + (1 - \overline{\alpha}) |\epsilon|^2 = \overline{\alpha} |X_0|^2 + 1 - \overline{\alpha}    
 $$
-We can approximate it like This as $X_0$ and $\epsilon$ are uncorrelated. Now, let's analyse the expression $|\hat{X_0}|^2$ = $|G_t|^2 |X_t|^2$ = $\frac{\overline{\alpha}}{\left( \overline{\alpha} + \frac{1 - \overline{\alpha}}{|X_0|^2} \right)^2} \left( \overline{\alpha} |X_0|^2 + 1 - \overline{\alpha} \right)$  
+We can approximate it like This as $X_0$ and $\epsilon$ are uncorrelated. Now, let's analyse the expression $|\hat{X_0}|^2$ = $|G_t|^2 |X_t|^2$ = $$ \frac{\overline{\alpha}}{\left( \overline{\alpha} + \frac{1 - \overline{\alpha}}{|X_0|^2} \right)^2} \left( \overline{\alpha} |X_0|^2 + 1 - \overline{\alpha} \right) $$  
 Now, during the initial denoising stages, $\bar{\alpha}  \approx 0$. So in the low frequency region, $|X_0|^2$ is very high, so we make the assumption that ${\overline{\alpha}} \, |X_0| \approx 1$. So in the low frequency region, $|\hat{X_0}^2| \approx |X_0|^2$. In the high frequency region, $|X_0|^2$ is low. So, $|\hat{X_0}|^2 \approx 0$. It can be clearly seen that in the inital denoising steps, the high magnitude signal is reconstructed while the low magnitude signal is approximated to zero. 
 
-In the later stages of the denoising process, $\bar{\alpha} \approx 1$, so regardless of the magnitude of $|X_0|^2$, the value $|\hat{X_0}|^2 \approx |{X_0}|^2$. 
+In the later stages of the denoising process, $\bar{\alpha} \approx 1$, so regardless of the magnitude of $|X_0|^2$ , the value $$ |\hat{X_0}|^2 \approx |{X_0}|^2 $$. 
 
 So we can clearly see that the diffusion model is succesfully able to learn the low frequency content in its initial denoising steps and eventually, given enough time steps, it learns the entire spectrum. But small diffusion models lack enough time steps and parameters, so only the low frequency spectrum is learnt well by the model and the predicted high frequency content is less than the ground truth
 
 There is another reason which might contribute to this bias. It is because the loss of a DDPM takes an expectation over the dataset.
 
-$\mathcal{L}_{\text{DDPM}} = \int p(\mathbf{x}_0) \, \mathbb{E}_{t, \epsilon} \left[ \left\| \epsilon - s(\mathbf{x}_t, t; \theta) \right\|_2^2 \right] d\mathbf{x}_0$
+$$ \mathcal{L}_{\text{DDPM}} = \int p(\mathbf{x}_0) \, \mathbb{E}_{t, \epsilon} \left[ \left\| \epsilon - s(\mathbf{x}_t, t; \theta) \right\|_2^2 \right] d\mathbf{x}_0 $$
 
 Most images have smooth features and there is a small perecntage of samples have high frequency components, hence p($\mathbf{x}_0$) for such samples is low and they are down weighted in the loss function. Due to their low weight, not much importance is given to reconstruction of high frequency components.
 
 
-# Mitigation of Frequency Bias Using Spectral Diffusion Model
+## Mitigation of Frequency Bias Using Spectral Diffusion Model
+
 The main problem with diffusion models is that the small vanilla U-Net cannot incorporate the dynamic spectrum into its loss function. So, the authors of this paper introduce a spectrum-aware distillation to enable photo-realistic generation with small models. The U-Net is replaced with a Wavelet Gating module which consists of a WG-Down and WG-Up network. The WG-Down network takes the Discrete Wavelet Transform of the imput image and outputs 4 images of sub-bands. They are respectively the LL, LH, HL, HH sub-bands. In the LL sub-band,a low-pass filter is applied on the rows and columns of the image and thus captures most of the low-frequency content of the image. The LH band is created by passing a low-pass filter on the rows and high-pass filter on the columns and captures the vertical edges of the image. The HL band is created by passing a high-pass filter on the rows and a low-pass filter on the colums of the image thus capturing the horizontal edges of the image. Finally, the HH sub-band is created by passing a high-pass filter on both rows and columns and thus captures diagonal edges . In essence, the LL sub-band captures the low-frequency details i.e. an approximation of the image, while the LH, HL, HH sub-bands capture the high-frequency details of the image. 
 
 The input image of size $H \times W \times C$ is divided into its corresponding 4 sub-bands (each of size $H/2 \times W/2 \times C$). Next, a soft-gating operation is used to weight these 4 sub-bands and the output feature X' is produced as follows:
