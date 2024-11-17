@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Analysing The Fourier Spectrum Biases of Generative Models
-description: This blog goes in depth in reviewing images in frequency domain and check whether generative models are able to properly reconstruct these images
+description: Diffusion and GAN models have demonstrated remarkable success in synthesizing high-quality images propelling them into various real-life applications across different domains. However, it has been observed that they exhibit spectral biases that impact their ability to generate certain frequencies. In this blog we analyze these models and attempt to explain these observations.
 date: 2025-04-28
 future: true
 htmlwidgets: true
@@ -68,13 +68,15 @@ From here we can see that in natural images, the power spectrum is high in the l
 
 ## Analysis of Bias in GANs
 
-Now, let us analyze the Generative Adversarial Networks(GANs) spectral deficiencies. In this section we show that the ability of GANs to learn a distribution is significantly biased against the high spatial frequencies. Some works have earlier attributed this merely to scarcity of high frequencies in natural images, recent works have shown that this is not so. There are two main hypotheses that have been proposed for the spectral biases; one attributes it to the employment of upsampling operations, and other attributes it to linear dependencies in Conv filter , i.e. , the size of the kernel deployed in the generator network. In addition to this, some works such as [add references]  show that downsampling layers also cause missing frequencies in discriminator. This issue may make the generator lacking the gradient information to model high-frequency content, resulting in a significant spectrum discrepancy between generated images and real images. We take up these hypotheses in the remainder of this section.
+Now, let us analyze GAN's spectral deficiencies. In this section we show that the ability of GANs to learn a distribution is significantly biased against the high spatial frequencies.
+
+Some works have earlier attributed this merely to scarcity of high frequencies in natural images, recent works have shown that this is not so. There are two main hypotheses that have been proposed for the spectral biases; one attributes it to the employment of upsampling operations, and other attributes it to linear dependencies in Conv filter , i.e. , the size of the kernel deployed in the generator network. We take up these hypotheses in the remainder of this section.
 
 ### Setting Up the Generative CNN Structure
 
 We’ll start by setting up the structure of a generative CNN model, which typically consists of a series of convolutional layers with filters that learn different features. Our CNN is structured as a stack of convolutional layers, with each layer represented as:
 
-[Insert image for a cnn network]
+{% include figure.html path="assets/img/2025-04-28-Analysing _the_Fourier_Spectrum_Biases_of_Generative_Models/CNN_Image.png" class="img-fluid" %}
 
 $$ H_{l+1}^i = \text{Conv}_l^i(H_l) = \sum_c F_{l}^{i,c} * \text{Up}(\sigma(H_l^c)) $$
 
@@ -110,9 +112,9 @@ $$\implies G = \{ W \in \mathcal{W} \mid \forall N(W), \exists U, V \in N(W) : f
 where $\mathcal{N}(W)$ represents the neighbourhood of $W$. $G$ captures the parameter values $W$ where $f(W)$ crosses zero in every neighborhood. Therefore, our objective becomes to show that $G$ has measure zero.
 
 A finite ReLU-CNN has a finite number of neurons and, hence, a finite number of ReLU activations. Each ReLU activation behaves like a piecewise linear function that "splits" the parameter space into regions. \
-$\implies$ For any fixed configuration of active/inactive neurons, $𝑓(𝑊)$ becomes a polynomial function of $𝑊$. Thus, for each configuration of ReLU activations, $𝑓(𝑊)$ behaves as a polynomial, with each configuration yielding a different polynomial form.
+$\implies$ For any fixed configuration of active/inactive neurons, $$𝑓(𝑊)$$ becomes a polynomial function of $$𝑊$$. Thus, for each configuration of ReLU activations, $$𝑓(𝑊)$$ behaves as a polynomial, with each configuration yielding a different polynomial form.
 
-A polynomial function on $\mathbb{R}^n \text{ to } \mathbb{R}$ has a measure zero set of zero-crossings in the parameter space (Caron & Traynor, 2005).  Intuitively, this means that the solutions to $f(W)=0$ occupy "negligible" space in the parameter space. \
+A polynomial function on $\mathbb{R}^n \text{ to } \mathbb{R}$ has a measure zero set of zero-crossings in the parameter space [add reference to:(Caron & Traynor, 2005)https://www.researchgate.net/publication/281285245_The_Zero_Set_of_a_Polynomial].  Intuitively, this means that the solutions to $f(W)=0$ occupy "negligible" space in the parameter space. \
 $\implies$ a finite set of such polynomials also has a measure zero set of zero-crossings. $\therefore$ $G$ is also a measure zero set.
 
 Finally, this reasoning holds for any scalar output $f$ of the network, at any spatial location or layer. Given that there are only a finite number of such outputs in a finite network, the measure of $G$ for all outputs is still zero, thereby completing the proof.
@@ -137,21 +139,21 @@ Now that we have set up the base, we now move onward with analyzing the effect o
 
 The filters ${F}_l^{i,c}$ in each convolutional layer are now the primary tools for shaping the output spectrum. Thus, the filters try to carve out the desired spectrum out of the input spectrum which is complicated by:
 
-1. Binary masks (ReLU) which altihough dont create new frequencies, but distort what frequencies are passed onto next layer, and aliased by upsampling.
+1. Binary masks (ReLU) which although dont create new frequencies, but distort what frequencies are passed onto next layer, and aliased by upsampling.
 2. Aliasing from Upsampling.
 
 Now, take anytwo spatial frequency components $U =\mathcal{F}_{l}^{i,c} (u_0, v_0)$ and $$V = \mathcal{F}_{l}^{i,c} (u_1, v_1)$$ on the kernel $F_l$ of $l$'th convolution layer spatial dimension $d_l$ and filter size $k_l$, at any point during training.
 Let $G_l$ be a filter of dimension $\mathbb{R}^{d_l \times d_l}$. Because of it's dimension, it is and unrestricted filter that can hypothetically model any spectrum in the output space of the layer. Hence, we can write $F_l$ 
 as a restriction of $G_l$ using a pulse P of area $k_l^2$ :
-$$ F_l = P.G_l \tag{1}$$
+$$ F_l = P.G_l $$
 $$ P(x,y) = P(x, y) =
-\begin{cases} \tag{2}
+\begin{cases}
 1, & \text{if } 0 \leq x, y < k_l \\ 
 0, & \text{if } k_l \leq x,y \leq d_l  
 \end{cases} $$
 
 Applying Convolution Thm on $F_l$:
-$$\mathcal{F}_l = \mathcal{F}_{P} \cdot \mathcal{G}_l = \mathcal{F}\{P\} * \mathcal{F}\{G_l\} \tag{3}$$
+$$\mathcal{F}_l = \mathcal{F}_{P} \cdot \mathcal{G}_l = \mathcal{F}\{P\} * \mathcal{F}\{G_l\} $$
 where $\mathcal{F}(\cdot)$ represents the $d_l$ point DFT.
 
 From (1), the Fourier Transform of $P(x,y)$ is given by:
@@ -160,26 +162,29 @@ $$\mathcal{F}\{P(x, y)\}(u, v) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty}
 
 $$\quad \implies \mathcal{F}\{P(x, y)\}(u, v) = \int_0^{k_l} \int_0^{k_l} e^{-i 2 \pi (u x + v y)} \, dx \, dy \quad $$ 
 
-$\text{Evaluating wrt x:}$
-$$\begin{equation} \tag{4}
+$\text{Evaluating wrt x:}$ 
+
+$$
 \int_0^{k_l} e^{-i 2 \pi u x} d x=\frac{1-e^{-i 2 \pi u k_l}}{i 2 \pi u}=k_l \operatorname{sinc}\left(\frac{u k_l}{d_l}\right)
-\end{equation}$$
+$$
 
-$\text{Evaluating wrt y:}$
-$$\begin{equation} \tag{5}
+$\text{Evaluating wrt y:}$ 
+
+$$
 \int_0^{k_l} e^{-i 2 \pi v y} d y=\frac{1-e^{-i 2 \pi v k_l}}{i 2 \pi v}=k_l \operatorname{sinc}\left(\frac{v k_l}{d_l}\right)
-\end{equation}$$
+$$
 
-$\text{Combining these results, the Fourier transform of P(x,y) is:}$
-$$\begin{equation} \tag{6}
+$\text{Combining these results, the Fourier transform of P(x,y) is:}$ 
+
+$$
 \mathcal{F}\{P(x, y)\}(u, v)=k_l^2 \operatorname{sinc}\left(\frac{u \kappa_l}{d_l}\right) \operatorname{sinc}\left(\frac{v k_l}{d_l}\right)
-\end{equation}$$
+$$
 
 When the function is sampled, aliasing causes the spectrum to repeat periodically in the frequency domain. Each repetition of the sinc function at integer multiples of the sampling frequency creates a periodic aliasing pattern. In case of P(x,y) the function transforms into:
 
-$$\begin{equation}\tag{7}
+$$
 \operatorname{Sinc}(u, v)=\frac{\sin \left(\frac{\pi u k_l}{d_l}\right) \sin \left(\frac{\pi v k_l}{d_l}\right)}{\sin \left(\frac{\pi u}{d_l}\right) \sin \left(\frac{\pi v}{d_l}\right)} e^{-j \pi(u+v)\left(\frac{k_{l}-1}{d_l}\right)}
-\end{equation}$$
+$$
 
 Here’s a breakdown of the components: \
 $\sin(\frac{\pi u k_l}{d_l})$ : This is the sinc function scaled by the ratio of $k_l$ and $d_l$, which determines how the spatial box function in the spatial domain transforms in the frequency domain.
@@ -188,9 +193,9 @@ The phase term $e^{-j \pi(u+v)\left(\frac{k_{l}-1}{d_l}\right)}$ : This accounts
 
 Calculating for the correlation between $U$ and $V$:
 
-$$\begin{equation}
+$$
 \operatorname{Cov}[U, V]=\operatorname{Cov}\left[\operatorname{Sinc} * \mathcal{F}\left\{G_l\right\}\left(u_0, v_0\right), \operatorname{Sinc} * \mathcal{F}\left\{G_l\right\}\left(u_1, v_1\right)\right]
-\end{equation}$$
+$$
 
 To expand this covariance term, we express $U$ and $V$ in terms of the sinc function and the frequency components of $G_l$:
 
@@ -270,12 +275,16 @@ $$
 
 This result indicates that the correlation between two frequency components in the spectrum of $F_l$ is inversely related to the filter size $k_l$. A larger filter (i.e., higher $k_l$) reduces the correlation between frequencies, enhancing the filter's ability to represent diverse frequencies independently. Conversely, a smaller filter (lower $k_l$) increases correlation, meaning that adjustments to one part of the frequency spectrum impact neighboring frequencies, thereby limiting the filter's effective capacity to separate and individually adjust each frequency component.
 
-In each convolutional layer, the maximum spatial frequency that can be achieved is bounded by the Nyquist frequency(you may refer to {add reference}). This means that a convolutional layer can accurately control spatial frequencies within the range $[0, \frac{d_l}{2d}]$ without aliasing. As a result, the high-frequency components are predominantly generated by the outer layers of the CNN, which have larger spatial dimensions $d_l$ With a fixed filter size $k_l$, an increase in $d_l$ leads to higher correlations across the filter’s spectrum, thereby reducing the filter’s effective capacity to fine-tune individual frequencies. Consequently, outer layers, responsible for creating high frequencies, face more restrictions in their spectral capacity compared to inner layers with smaller $d_l$, which have greater flexibility for spectral adjustments.
+In each convolutional layer, the maximum spatial frequency that can be achieved is bounded by the Nyquist frequency. This means that a convolutional layer can accurately control spatial frequencies within the range $[0, \frac{d_l}{2d}]$ without aliasing. As a result, the high-frequency components are predominantly generated by the outer layers of the CNN, which have larger spatial dimensions $d_l$ With a fixed filter size $k_l$, an increase in $d_l$ leads to higher correlations across the filter’s spectrum, thereby reducing the filter’s effective capacity to fine-tune individual frequencies. Consequently, outer layers, responsible for creating high frequencies, face more restrictions in their spectral capacity compared to inner layers with smaller $d_l$, which have greater flexibility for spectral adjustments.
+
+{% include figure.html path="assets/img/2025-04-28-Analysing _the_Fourier_Spectrum_Biases_of_Generative_Models/Filter_Response.png" %}
+<div class="caption">
+    Source:[give reference to https://arxiv.org/pdf/2403.05093]
+</div>
 
 Moreover, while only the outer layers can produce high frequencies without aliasing, all layers can contribute to the low-frequency spectrum without this restriction. Thus, the spatial extent of the effective filter acting on low frequencies is consistently larger than that acting on high frequencies. Even if larger filter sizes $k_l$ are used in the outer layers to counterbalance the larger $d_l$ , low frequencies continue to benefit from a larger effective filter size compared to high frequencies, which ultimately results in lower correlation at low frequencies.
 
-
-
+In addition to this, some works such as [add references: https://arxiv.org/pdf/2012.05535]  show that downsampling layers also cause missing frequencies in discriminator. This issue may make the generator lacking the gradient information to model high-frequency content, resulting in a significant spectrum discrepancy between generated images and real images.
 
 
 ## Frequency bias in Diffusion Models
