@@ -286,11 +286,11 @@ Let the input image that we want to reconstruct be $x_0$
 and the $\epsilon$ be white noise of variance 1. $x_t$ is the noised sample at time step t. Hence we can write 
 $\mathbf{x}_t = \sqrt{\bar{\alpha}} \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}} \epsilon$
 
-In the denoising process , let $h_t$ be the filter that is learned . So $h_t^*$ is the optimal filter which minimizes the loss function of the diffusion model $L_t = \|\mathbf{h}_t * \mathbf{x}_t - \epsilon\|^2$
+In the denoising process , let $h_t$ be the filter that is learned . So $h_t^* $ is the optimal filter which minimizes the loss function of the diffusion model $L_t = \|\mathbf{h}_t * \mathbf{x}_t - \epsilon\|^2$
 .
-Here $*$ denotes the standard convolution operation. The optimal filter solution can be found easily in the frequency domain i.e.
-$$\mathcal{H}_t^*(f) = \frac{1}{\bar{\alpha} |X_0(f)|^2 + 1 - \bar{\alpha}}$$
-. Here $\mathcal{H}_t^*(f)$ represents the frequency response of the filter. Here a larger value of $$\mathcal{H}_t^*(f)$$ means that more of the signal at frequency f will be passed. A smaller value of $\mathcal{H}_t^*(f)$ means that the signal at frequency f will be attenuated. $|X_0(f)|^2$
+Here $* $ denotes the standard convolution operation. The optimal filter solution can be found easily in the frequency domain i.e.
+$$ \mathcal{H}_t^*(f) = \frac{1}{\bar{\alpha} |X_0(f)|^2 + 1 - \bar{\alpha}} $$.
+Here $\mathcal{H}_t^*(f)$ represents the frequency response of the filter. Here a larger value of $$ \mathcal{H}_t^*(f) $$ means that more of the signal at frequency f will be passed. A smaller value of $$\mathcal{H}_t^*(f)$$ means that the signal at frequency f will be attenuated. $|X_0(f)|^2$
 is the power spectrum of the original signal i.e. $X_0$, representing the magnitude of a particular frequency f in the spectrum
 Let's inspect the formula carefully. During the denoising phase $\bar{\alpha}$ goes from 0 to 1. 
 
@@ -329,12 +329,11 @@ $$
 \frac{\partial J_t}{\partial G_t} = \left| X_0 \right|^2 \left[ 2 \left( 1 - G_t^* \sqrt{\overline{\alpha}} \right) \left( -\sqrt{\overline{\alpha}} \right) \right] + 2 G_t^* (1 - \sqrt{\overline{\alpha}}) = 0
 $$
 
-
 This gives us 
 $$
 G_t^*  = \frac{\sqrt{\overline{\alpha}}}{\overline{\alpha} + \frac{1 - \overline{\alpha}}{|X_0|^2}}
 $$
-Here $G_t^*$ is the conjugate reconstruction filter. As it is real, $G_t^* = G_t$.
+Here $ G_t^* $ is the conjugate reconstruction filter. As it is real, $G_t^* = G_t$ .
 Hence $G_t  = \frac{\sqrt{\overline{\alpha}}}{\overline{\alpha} + \frac{1 - \overline{\alpha}}{|X_0|^2}}$ is the optimal linear reconstruction filter. The predicted $\hat{X}_0$ = $G_t \times X_t$. So predicted power spectrum $|\hat{X}_0|^2 = |G_t|^2 |X_0|^2$
 
 $$
@@ -343,7 +342,7 @@ $$
 We can approximate it like This as $X_0$ and $\epsilon$ are uncorrelated. Now, let's analyse the expression $|\hat{X_0}|^2$ = $|G_t|^2 |X_t|^2$ = $$ \frac{\overline{\alpha}}{\left( \overline{\alpha} + \frac{1 - \overline{\alpha}}{|X_0|^2} \right)^2} \left( \overline{\alpha} |X_0|^2 + 1 - \overline{\alpha} \right) $$  
 Now, during the initial denoising stages, $\bar{\alpha}  \approx 0$. So in the low frequency region, $|X_0|^2$ is very high, so we make the assumption that ${\overline{\alpha}} \, |X_0| \approx 1$. So in the low frequency region, $|\hat{X_0}^2| \approx |X_0|^2$. In the high frequency region, $|X_0|^2$ is low. So, $|\hat{X_0}|^2 \approx 0$. It can be clearly seen that in the inital denoising steps, the high magnitude signal is reconstructed while the low magnitude signal is approximated to zero. 
 
-In the later stages of the denoising process, $\bar{\alpha} \approx 1$, so regardless of the magnitude of $|X_0|^2$ , the value $$ |\hat{X_0}|^2 \approx |{X_0}|^2 $$. 
+In the later stages of the denoising process, $\bar{\alpha} \approx 1$, so regardless of the magnitude of $|X_0|^2$, the value $$ |\hat{X_0}|^2 \approx |{X_0}|^2 $$.
 
 So we can clearly see that the diffusion model is succesfully able to learn the low frequency content in its initial denoising steps and eventually, given enough time steps, it learns the entire spectrum. But small diffusion models lack enough time steps and parameters, so only the low frequency spectrum is learnt well by the model and the predicted high frequency content is less than the ground truth
 
